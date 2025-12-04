@@ -1,7 +1,7 @@
 from . import app
 import os
 import json
-from flask import jsonify, request, make_response, abort, url_for  # noqa; F401
+from flask import jsonify, request, Response, make_response, abort, url_for  # noqa; F401
 
 SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
 json_url = os.path.join(SITE_ROOT, "data", "pictures.json")
@@ -55,7 +55,13 @@ def get_picture_by_id(id):
 ######################################################################
 @app.route("/picture", methods=["POST"])
 def create_picture():
-    pass
+    item = request.get_json()
+    for old_item in data:
+        if item["id"] == old_item["id"]:
+            return {"Message": f"picture with id {item['id']} already present"}, 302
+    data.append(item)
+    return item, 201
+
 
 ######################################################################
 # UPDATE A PICTURE
@@ -64,11 +70,23 @@ def create_picture():
 
 @app.route("/picture/<int:id>", methods=["PUT"])
 def update_picture(id):
-    pass
+    picture = request.get_json()
+
+    for idx, item in enumerate(data):
+        if item["id"] == picture["id"]:
+            data[idx] = picture
+            return picture
+    
+    return {"message": "picture not found"}, 404
 
 ######################################################################
 # DELETE A PICTURE
 ######################################################################
 @app.route("/picture/<int:id>", methods=["DELETE"])
 def delete_picture(id):
-    pass
+    for item in data:
+        if item["id"] == id:
+            data.remove(item)
+            return Response(status=204)
+    
+    return {"message": "picture not found"}, 404
